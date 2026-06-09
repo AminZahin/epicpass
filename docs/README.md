@@ -1,113 +1,211 @@
-# 🎫 EpicPass — Real-Time Event & Ticketing Platform
+# 🎫 EpicPass
 
-[![Laravel 13](https://shields.io)](https://laravel.com)
-[![PHP 8.4](https://shields.io)](https://php.net)
-[![Inertia.js](https://shields.io)](https://inertiajs.com)
-[![Tests Passing](https://shields.io)]()
+**EpicPass** is a high-concurrency event ticketing platform built with **Laravel 13, Inertia.js, Vue 3, MySQL, Docker, and Pest**.
 
-An enterprise-grade, high-concurrency event management and ticketing SaaS designed to handle high-traffic "ticket rushes." This project showcases modern **Laravel 13** architectural patterns, real-time WebSocket broadcasting, and secure transaction handling.
+The main goal of this project is to demonstrate how ticket inventory can be protected during high-traffic purchase scenarios using **database transactions** and **pessimistic locking**.
 
 ---
 
-## 🚀 Core Architectural Highlights (Why This Dynamic?)
+## 🚀 Current Features
 
-Instead of standard CRUD operations, this project implements production-level engineering solutions to common industry problems:
-
-*   **⚡ Concurrency Control (The Ticket Rush Solution)**: Utilizes database-level pessimistic locking (`sharedLock` and `lockForUpdate`) wrapped in atomized transactions to prevent double-booking or ticket overselling at the exact same millisecond.
-*   **📡 Real-Time Broadcasting**: Employs **Laravel Reverb** with the new database driver to broadcast live ticket inventory updates to frontend dashboards without page refreshes.
-*   **⚙️ Asynchronous Processing**: Leverages background database queues for PDF generation, ticket QR-code compilation, and automated transactional email dispatching.
-*   **💳 Webhook Integration**: Fully integrates with Stripe via Laravel Cashier, utilizing secure webhook signatures to provision tickets only upon verified ledger updates.
-
----
-
-## 🛠️ The Tech Stack
-
-*   **Backend Framework:** Laravel 13 (utilizing modern PHP 8.4 attributes)
-*   **Frontend System:** Inertia.js (Vue 3 / React) paired with Tailwind CSS
-*   **Database Engine:** PostgreSQL (Optimized indices for relational searching)
-*   **Real-time Engine:** Laravel Reverb (Native WebSockets server)
-*   **Testing Suite:** Pest PHP (Feature and Unit test isolation)
-*   **Code Quality Suite:** Laravel Pint (Strict code styling enforcement)
+* Event ticket inventory display
+* Ticket purchase flow
+* MySQL-based transaction safety
+* Pessimistic locking with `lockForUpdate()`
+* Overselling prevention
+* Pest feature test for ticket rush scenario
+* Inertia.js + Vue 3 event dashboard
+* Dockerized local development with Laravel Sail
 
 ---
 
-## 🗄️ Database Strategy & Concurrency Guard
+## 🧠 Why This Project Matters
 
-To prevent race conditions when thousands of users click "Buy Ticket" simultaneously, the system locks database rows strictly during calculation checks:
+A normal ticket purchase system can fail when multiple users buy the final ticket at the same time.
+
+EpicPass solves this by wrapping the purchase process inside a database transaction and locking the event row before checking and decrementing the remaining ticket count.
 
 ```php
-use App\Models\Event;
-use Illuminate\Support\Facades\DB;
-
-DB::transaction(function () use (eventId, userId) {
-    // Lock the event row for update to prevent simultaneous reading/writing
-    event = Event::where('id', eventId)
+DB::transaction(function () use ($request, $id) {
+    $event = Event::where('id', $id)
         ->lockForUpdate()
         ->firstOrFail();
 
-    if (\$event->remaining_tickets <= 0) {
-        throw new \Exception('Tickets are officially sold out.');
+    if ($event->remaining_tickets <= 0) {
+        return response()->json([
+            'message' => 'Tickets are completely sold out!'
+        ], 422);
     }
 
-    // Decrement inventory and issue ticket atomically
-    \$event->decrement('remaining_tickets');
-    \(event->tickets()->create(['user_id' =>\)userId]);
+    $event->decrement('remaining_tickets');
+
+    return $event->tickets()->create([
+        'user_id' => $request->user()->id,
+        'ticket_code' => 'EPIC-' . strtoupper(Str::random(10)),
+    ]);
 });
 ```
 
 ---
 
-## 🧪 Testing Coverage (100% Confidence)
+## 🏗️ Architecture Overview
 
-The codebase features rigorous automated testing using **Pest PHP** to guarantee reliability under severe workloads.
-
-```bash
-# Run tests with parallel execution optimized for speed
-php artisan test --parallel
-```
-
-### Example Feature Test: Ticket Rush Scenario
-```php
-it('prevents overselling when tickets hit absolute zero capacity', function () {
-    \$event = Event::factory()->create(['remaining_tickets' => 1]);
-    
-    // Simulate first purchase
-    response1 = this->actingAs(this->user1)->post("/events/event->id}/purchase");
-    \$response1->assertStatus(200);
-
-    // Simulate simultaneous click on empty inventory
-    response2 = this->actingAs(this->user2)->post("/events/event->id}/purchase");
-    \$response2->assertStatus(422); // Unprocessable Entity due to exhaustion
-    
-    expect(\$event->fresh()->remaining_tickets)->toBe(0);
-});
+```text
+Browser (Vue 3 + Inertia.js)
+        |
+        v
+Laravel Route
+        |
+        v
+TicketController
+        |
+        v
+DB::transaction()
+        |
+        v
+lockForUpdate()
+        |
+        v
+MySQL events table
+        |
+        v
+Ticket issued safely
 ```
 
 ---
 
-## 📈 Key Engineering Takeaways (What I Learned)
+## 🛠️ Tech Stack
 
-1.  **Race Conditions are Real:** I learned how to isolate critical business loops within database transactions to ensure data consistency under immense horizontal stress.
-2.  **State Management over API Boilerplate:** Using Inertia.js allowed me to drop complex state-synchronization patterns usually required between standalone client apps and separate API repositories.
-3.  **Clean Code Patterns:** Utilized Laravel 13's PHP class attribute syntax to declare routing parameters, validation models, and continuous integration constraints natively inside the core controller modules.
+| Area                    | Technology                      |
+| ----------------------- | ------------------------------- |
+| Backend                 | Laravel 13, PHP 8.4             |
+| Frontend                | Inertia.js, Vue 3, Tailwind CSS |
+| Database                | MySQL                           |
+| Development Environment | Laravel Sail, Docker, WSL2      |
+| Testing                 | Pest PHP                        |
+| Version Control         | Git, GitHub                     |
 
 ---
 
-## 💻 Getting Started Locally
+## 🧪 Testing
+
+EpicPass includes a Pest feature test that verifies the system prevents overselling when only one ticket remains.
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com
+./vendor/bin/sail artisan test
+```
 
-# 2. Install dependencies
-composer install && npm install
+Specific ticket purchase test:
 
-# 3. Configure local environment variables
+```bash
+./vendor/bin/sail artisan test --filter=TicketPurchaseTest
+```
+
+---
+
+## 💻 Local Setup
+
+Clone the repository:
+
+```bash
+git clone git@github.com:AminZahin/epicpass.git
+cd epicpass
+```
+
+Install PHP dependencies:
+
+```bash
+composer install
+```
+
+Install frontend dependencies:
+
+```bash
+npm install
+```
+
+Copy environment file:
+
+```bash
 cp .env.example .env
-
-# 4. Spin up the application containers via Laravel Sail
-./vendor/bin/sail up -d
-
-# 5. Execute migrations and seed database parameters
-./vendor/bin/sail artisan migrate --seed
 ```
+
+Start Laravel Sail:
+
+```bash
+./vendor/bin/sail up -d
+```
+
+Generate app key:
+
+```bash
+./vendor/bin/sail artisan key:generate
+```
+
+Run migrations:
+
+```bash
+./vendor/bin/sail artisan migrate
+```
+
+Start Vite:
+
+```bash
+./vendor/bin/sail npm run dev
+```
+
+Open the application:
+
+```text
+http://localhost
+```
+
+---
+
+## 📌 Current Release
+
+### v0.1.0 — Concurrency-safe Ticket Purchasing
+
+Implemented:
+
+* Event and ticket database schema
+* Ticket purchase controller
+* Transaction-safe purchase flow
+* Pessimistic database locking
+* Overselling prevention test
+* Basic event dashboard UI
+
+---
+
+## 🗺️ Roadmap
+
+### v0.2.0 — Event Listing Page
+
+* `/events` page
+* List all events
+* Link to individual event purchase page
+
+### v0.3.0 — Real-Time Inventory Updates
+
+* Laravel Reverb integration
+* Broadcast ticket inventory updates
+* Live counter update without refresh
+
+### v0.4.0 — Admin Analytics Dashboard
+
+* Total tickets sold
+* Remaining inventory
+* Event performance overview
+
+### v0.5.0 — Portfolio Polish
+
+* Screenshots
+* Demo GIF
+* Architecture diagram
+* Deployment notes
+
+---
+
+## 👨‍💻 Author
+
+Built by **Amin Zahin** as a high-scale Laravel portfolio project focused on backend engineering, database safety, and real-world system design.
