@@ -11,6 +11,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')
         ->name('dashboard');
 
+    Route ::get('/events', [EventController::class, 'index'])
+        ->name('events.index');
+
     Route::get('/events/{event}', [EventController::class, 'show'])
         ->name('events.show');
 
