@@ -20,9 +20,7 @@ class TicketController extends Controller
                     ->firstOrFail();
 
                 if ($event->remaining_tickets <= 0) {
-                    return response()->json([
-                        'message' => 'Tickets are completely sold out!',
-                    ], 422);
+                    throw new \DomainException('Tickets are completely sold out!');
                 }
 
                 $event->decrement('remaining_tickets');
@@ -45,11 +43,15 @@ class TicketController extends Controller
                 'message' => 'Ticket purchased successfully!',
                 'ticket' => $result['ticket'],
             ], 200);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (Throwable $e) {
             report($e);
 
             return response()->json([
-                'message' => $e->getMessage(),
+                'message' => 'Transaction failure.',
             ], 500);
         }
     }
