@@ -1,7 +1,4 @@
 import { createInertiaApp } from '@inertiajs/vue3';
-import './lib/echo'
-import { configureEcho } from '@laravel/echo-vue';
-import { configureEcho } from '@laravel/echo-vue';
 import type { DefineComponent } from 'vue';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -9,30 +6,22 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-configureEcho({
-    broadcaster: 'reverb',
-});
-
-configureEcho({
-    broadcaster: 'reverb',
-});
-
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
 
     resolve: (name) => {
-    const pages = import.meta.glob<DefineComponent>('./pages/**/*.vue');
+        const pages = import.meta.glob<DefineComponent>('./pages/**/*.vue');
 
-    const page = pages[`./pages/${name}.vue`];
+        const page = pages[`./pages/${name}.vue`];
 
-    if (!page) {
-        throw new Error(`Page not found: ${name}`);
-    }
+        if (!page) {
+            throw new Error(`Page not found: ${name}`);
+        }
 
-    return page();
-},
+        return page();
+    },
 
     layout: (name) => {
         switch (true) {
