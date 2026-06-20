@@ -64,7 +64,7 @@ onMounted(async () => {
             remaining_tickets: number
             sold_tickets: number
         }) => {
-            remainingTickets.value = payload.remaining_tickets
+            remainingTickets.value = payload.event.remaining_tickets
         },
     )
 })

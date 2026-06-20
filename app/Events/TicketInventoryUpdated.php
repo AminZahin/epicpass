@@ -20,6 +20,7 @@ class TicketInventoryUpdated implements ShouldBroadcastNow
     {
         return [
             new Channel('events.' . $this->event->id),
+            new Channel('analytics.dashboard'),
         ];
     }
 
@@ -30,11 +31,26 @@ class TicketInventoryUpdated implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
+        $totalEvents = Event::count();
+        $totalCapacity = Event::sum('total_tickets');
+        $remainingTickets = Event::sum('remaining_tickets');
+        $ticketsSold = $totalCapacity - $remainingTickets;
+
         return [
-            'event_id' => $this->event->id,
-            'total_tickets' => $this->event->total_tickets,
-            'remaining_tickets' => $this->event->remaining_tickets,
-            'sold_tickets' => $this->event->total_tickets - $this->event->remaining_tickets,
+            'event' => [
+                'id' => $this->event->id,
+                'total_tickets' => $this->event->total_tickets,
+                'remaining_tickets' => $this->event->remaining_tickets,
+                'sold_tickets' => $this->event->total_tickets - $this->event->remaining_tickets,
+            ],
+            'analytics' => [
+                'totalEvents' => $totalEvents,
+                'ticketsSold' => $ticketsSold,
+                'remainingTickets' => $remainingTickets,
+                'sellThrough' => $totalCapacity > 0
+                    ? round(($ticketsSold / $totalCapacity) * 100, 2)
+                    : 0,
+            ],
         ];
     }
 }

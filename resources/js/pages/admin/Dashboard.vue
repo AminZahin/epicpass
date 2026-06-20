@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import { onMounted, reactive } from 'vue'
+
+const props = defineProps<{
     stats: {
         totalEvents: number
         ticketsSold: number
@@ -7,6 +9,41 @@ defineProps<{
         sellThrough: number
     }
 }>()
+
+const stats = reactive({ ...props.stats })
+
+onMounted(async () => {
+    const Echo = (await import('laravel-echo')).default
+    const Pusher = (await import('pusher-js')).default
+
+    const echo = new Echo({
+        broadcaster: 'reverb',
+        key: import.meta.env.VITE_REVERB_APP_KEY,
+        wsHost: import.meta.env.VITE_REVERB_HOST ?? window.location.hostname,
+        wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
+        wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
+        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
+        enabledTransports: ['ws', 'wss'],
+        Pusher,
+    })
+
+    echo.channel('analytics.dashboard').listen(
+        '.ticket.inventory.updated',
+        (payload: {
+            analytics: {
+                totalEvents: number
+                ticketsSold: number
+                remainingTickets: number
+                sellThrough: number
+            }
+        }) => {
+            stats.totalEvents = payload.analytics.totalEvents
+            stats.ticketsSold = payload.analytics.ticketsSold
+            stats.remainingTickets = payload.analytics.remainingTickets
+            stats.sellThrough = payload.analytics.sellThrough
+        },
+    )
+})
 </script>
 
 <template>
