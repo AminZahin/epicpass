@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Head } from '@inertiajs/vue3' // Ditambah untuk pengurusan tajuk tab pelayar
 import { onMounted, reactive } from 'vue'
 
 const props = defineProps<{
@@ -47,44 +48,67 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-100 px-6 py-10">
+    <Head title="Admin Dashboard - Live Analytics" />
+
+    <div class="min-h-screen bg-gray-950 px-6 py-12 text-white">
         <div class="mx-auto max-w-6xl">
-            <h1 class="text-4xl font-bold text-gray-900">
-                Admin Dashboard
-            </h1>
+            
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-4xl font-black tracking-tight text-white lg:text-5xl">
+                        Admin Dashboard
+                    </h1>
+                    <p class="mt-2 text-gray-400">
+                        Ticketing performance and infrastructure stream overview for EpicPass.
+                    </p>
+                </div>
 
-            <p class="mt-2 text-gray-600">
-                Ticketing performance overview for EpicPass.
-            </p>
+                <div class="self-start sm:self-center">
+                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20 tracking-wider uppercase">
+                        <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        Reverb Engine Connected
+                    </span>
+                </div>
+            </div>
 
-            <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <div class="rounded-2xl bg-white p-6 shadow">
-                    <p class="text-sm text-gray-500">Total Events</p>
-                    <p class="mt-3 text-4xl font-bold text-gray-900">
+            <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-white/20">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">
+                        Total Events
+                    </p>
+                    <p class="mt-4 text-5xl font-black tracking-tight text-white">
                         {{ stats.totalEvents }}
                     </p>
                 </div>
 
-                <div class="rounded-2xl bg-white p-6 shadow">
-                    <p class="text-sm text-gray-500">Tickets Sold</p>
-                    <p class="mt-3 text-4xl font-bold text-indigo-600">
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-indigo-500/30">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">
+                        Tickets Sold
+                    </p>
+                    <p class="mt-4 text-5xl font-black tracking-tight text-indigo-400 drop-shadow-[0_0_15px_rgba(129,140,248,0.25)]">
                         {{ stats.ticketsSold }}
                     </p>
                 </div>
 
-                <div class="rounded-2xl bg-white p-6 shadow">
-                    <p class="text-sm text-gray-500">Remaining Tickets</p>
-                    <p class="mt-3 text-4xl font-bold text-green-600">
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-emerald-500/30">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">
+                        Remaining Tickets
+                    </p>
+                    <p class="mt-4 text-5xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.25)]">
                         {{ stats.remainingTickets }}
                     </p>
                 </div>
 
-                <div class="rounded-2xl bg-white p-6 shadow">
-                    <p class="text-sm text-gray-500">Sell Through</p>
-                    <p class="mt-3 text-4xl font-bold text-red-600">
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-fuchsia-500/30">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">
+                        Sell Through Rate
+                    </p>
+                    <p class="mt-4 text-5xl font-black tracking-tight text-fuchsia-400 drop-shadow-[0_0_15px_rgba(232,121,249,0.25)]">
                         {{ stats.sellThrough }}%
                     </p>
                 </div>
+                
             </div>
         </div>
     </div>

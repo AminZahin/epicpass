@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, Head } from '@inertiajs/vue3' // Ditambah Head untuk SEO & penamaan tab pelayar
 
 defineProps<{
     events: {
@@ -22,88 +22,94 @@ const deleteEvent = (eventId: number) => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-100 px-6 py-10">
+    <Head title="Admin Events Management" />
+
+    <div class="min-h-screen bg-gray-950 px-6 py-12 text-white">
         <div class="mx-auto max-w-6xl">
-            <div class="mb-8 flex items-center justify-between">
+            
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 class="text-4xl font-bold text-gray-900">
+                    <h1 class="text-4xl font-black tracking-tight text-white lg:text-5xl">
                         Admin Events
                     </h1>
-                    <p class="mt-2 text-gray-600">
-                        Create, update, and manage ticketed events.
+                    <p class="mt-2 text-gray-400">
+                        Monitor live availability pools, scale tickets, and command system-wide listings.
                     </p>
                 </div>
 
-                <Link
-                    href="/admin/events/create"
-                    class="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-700"
-                >
-                    Create Event
-                </Link>
+                <div>
+                    <Link
+                        href="/admin/events/create"
+                        class="inline-block rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all duration-200"
+                    >
+                        Create Event
+                    </Link>
+                </div>
             </div>
 
-            <div class="overflow-hidden rounded-2xl bg-white shadow">
-                <table class="w-full text-left">
-                    <thead class="bg-gray-50 text-sm text-gray-500">
+            <div class="overflow-x-auto rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-md">
+                <table class="w-full text-left border-collapse">
+                    <thead class="border-b border-white/10 bg-white/5 text-xs font-bold uppercase tracking-wider text-gray-400">
                         <tr>
-                            <th class="px-6 py-4">Event</th>
-                            <th class="px-6 py-4">Date</th>
-                            <th class="px-6 py-4">Total</th>
+                            <th class="px-6 py-4">Event Information</th>
+                            <th class="px-6 py-4">Schedule Date</th>
+                            <th class="px-6 py-4">Total Pool</th>
                             <th class="px-6 py-4">Remaining</th>
                             <th class="px-6 py-4">Sold</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
+                            <th class="px-6 py-4 text-right">Management Actions</th>
                         </tr>
                     </thead>
 
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-white/5 text-sm">
                         <tr
                             v-for="event in events"
                             :key="event.id"
+                            class="hover:bg-white/5 transition-colors duration-150"
                         >
-                            <td class="px-6 py-4">
-                                <p class="font-semibold text-gray-900">
+                            <td class="px-6 py-5">
+                                <p class="font-bold text-white text-base">
                                     {{ event.title }}
                                 </p>
-                                <p class="mt-1 max-w-md truncate text-sm text-gray-500">
+                                <p class="mt-1 max-w-md truncate text-sm text-gray-400">
                                     {{ event.description }}
                                 </p>
                             </td>
 
-                            <td class="px-6 py-4 text-sm text-gray-600">
+                            <td class="px-6 py-5 text-gray-300 font-medium whitespace-nowrap">
                                 {{ event.event_date }}
                             </td>
 
-                            <td class="px-6 py-4 font-medium text-gray-900">
+                            <td class="px-6 py-5 font-semibold text-gray-200">
                                 {{ event.total_tickets }}
                             </td>
 
-                            <td class="px-6 py-4 font-medium text-green-600">
+                            <td class="px-6 py-5 font-bold text-emerald-400">
                                 {{ event.remaining_tickets }}
                             </td>
 
-                            <td class="px-6 py-4 font-medium text-red-600">
+                            <td class="px-6 py-5 font-bold text-rose-400">
                                 {{ event.total_tickets - event.remaining_tickets }}
                             </td>
 
-                            <td class="px-6 py-4">
-                                <div class="flex justify-end gap-3">
+                            <td class="px-6 py-5">
+                                <div class="flex items-center justify-end gap-4">
                                     <Link
                                         :href="`/events/${event.id}`"
-                                        class="text-sm font-semibold text-gray-600 hover:text-gray-900"
+                                        class="text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors duration-200"
                                     >
                                         View
                                     </Link>
 
                                     <Link
                                         :href="`/admin/events/${event.id}/edit`"
-                                        class="text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+                                        class="text-xs font-bold uppercase tracking-wider text-indigo-400 hover:text-indigo-300 transition-colors duration-200"
                                     >
                                         Edit
                                     </Link>
 
                                     <button
                                         type="button"
-                                        class="text-sm font-semibold text-red-600 hover:text-red-800"
+                                        class="text-xs font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 transition-colors duration-200"
                                         @click="deleteEvent(event.id)"
                                     >
                                         Delete
@@ -115,9 +121,14 @@ const deleteEvent = (eventId: number) => {
                         <tr v-if="events.length === 0">
                             <td
                                 colspan="6"
-                                class="px-6 py-10 text-center text-gray-500"
+                                class="px-6 py-16 text-center text-gray-500 bg-gray-900/10"
                             >
-                                No events created yet.
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    <span class="text-4xl opacity-40">🎫</span>
+                                    <p class="text-sm font-medium text-gray-400 mt-2">
+                                        No high-traffic events registered in system yet.
+                                    </p>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
