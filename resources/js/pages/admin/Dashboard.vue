@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3' // Ditambah untuk pengurusan tajuk tab pelayar
+import { Head, Link } from '@inertiajs/vue3'
 import { onMounted, reactive } from 'vue'
+
+type FeaturedEvent = {
+    title: string
+    sold?: number
+    remaining?: number
+} | null
 
 const props = defineProps<{
     stats: {
         totalEvents: number
         ticketsSold: number
         remainingTickets: number
+        totalCapacity: number
         sellThrough: number
+        soldOutEvents: number
+        highestSellingEvent: FeaturedEvent
+        lowestInventoryEvent: FeaturedEvent
     }
 }>()
 
+// Menyalin prop asal ke dalam objek reaktif
 const stats = reactive({ ...props.stats })
 
 onMounted(async () => {
@@ -31,17 +42,28 @@ onMounted(async () => {
     echo.channel('analytics.dashboard').listen(
         '.ticket.inventory.updated',
         (payload: {
-            analytics: {
-                totalEvents: number
-                ticketsSold: number
-                remainingTickets: number
-                sellThrough: number
-            }
+            analytics: typeof props.stats
         }) => {
-            stats.totalEvents = payload.analytics.totalEvents
-            stats.ticketsSold = payload.analytics.ticketsSold
-            stats.remainingTickets = payload.analytics.remainingTickets
-            stats.sellThrough = payload.analytics.sellThrough
+            if (!payload || !payload.analytics) return
+
+            const data = payload.analytics
+
+            // Pengesahan & Pemutihan Jenis Data (Type Casting)
+            stats.totalEvents = Number(data.totalEvents)
+            stats.ticketsSold = Number(data.ticketsSold)
+            stats.remainingTickets = Number(data.remainingTickets)
+            stats.totalCapacity = Number(data.totalCapacity)
+            stats.sellThrough = Number(data.sellThrough)
+            stats.soldOutEvents = Number(data.soldOutEvents)
+
+            // Menguruskan pertukaran objek nullable dengan selamat
+            stats.highestSellingEvent = data.highestSellingEvent 
+                ? { ...data.highestSellingEvent, sold: Number(data.highestSellingEvent.sold ?? 0) }
+                : null
+
+            stats.lowestInventoryEvent = data.lowestInventoryEvent
+                ? { ...data.lowestInventoryEvent, remaining: Number(data.lowestInventoryEvent.remaining ?? 0) }
+                : null
         },
     )
 })
@@ -59,57 +81,92 @@ onMounted(async () => {
                         Admin Dashboard
                     </h1>
                     <p class="mt-2 text-gray-400">
-                        Ticketing performance and infrastructure stream overview for EpicPass.
+                        Ticketing performance and live inventory overview for EpicPass.
                     </p>
                 </div>
 
                 <div class="self-start sm:self-center">
-                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20 tracking-wider uppercase">
-                        <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold tracking-wider text-emerald-400 uppercase">
+                        <span class="h-2 w-2 animate-ping rounded-full bg-emerald-400"></span>
                         Reverb Engine Connected
                     </span>
                 </div>
             </div>
 
-            <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                
-                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-white/20">
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">
-                        Total Events
-                    </p>
-                    <p class="mt-4 text-5xl font-black tracking-tight text-white">
-                        {{ stats.totalEvents }}
-                    </p>
-                </div>
-
-                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-indigo-500/30">
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">
-                        Tickets Sold
-                    </p>
-                    <p class="mt-4 text-5xl font-black tracking-tight text-indigo-400 drop-shadow-[0_0_15px_rgba(129,140,248,0.25)]">
-                        {{ stats.ticketsSold }}
-                    </p>
-                </div>
-
-                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-emerald-500/30">
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">
-                        Remaining Tickets
-                    </p>
-                    <p class="mt-4 text-5xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.25)]">
-                        {{ stats.remainingTickets }}
-                    </p>
-                </div>
-
-                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-fuchsia-500/30">
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">
-                        Sell Through Rate
-                    </p>
-                    <p class="mt-4 text-5xl font-black tracking-tight text-fuchsia-400 drop-shadow-[0_0_15px_rgba(232,121,249,0.25)]">
-                        {{ stats.sellThrough }}%
-                    </p>
-                </div>
-                
+            <div class="mt-8">
+                <Link
+                    href="/admin/events"
+                    class="inline-flex rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all duration-200"
+                >
+                    Manage Events &rarr;
+                </Link>
             </div>
+
+            <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Total Events</p>
+                    <p class="mt-4 text-5xl font-black tracking-tight text-white">{{ stats.totalEvents }}</p>
+                </div>
+
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Tickets Sold</p>
+                    <p class="mt-4 text-5xl font-black tracking-tight text-indigo-400">{{ stats.ticketsSold }}</p>
+                </div>
+
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Remaining Tickets</p>
+                    <p class="mt-4 text-5xl font-black tracking-tight text-emerald-400">{{ stats.remainingTickets }}</p>
+                </div>
+
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Sell Through Rate</p>
+                    <p class="mt-4 text-5xl font-black tracking-tight text-fuchsia-400">{{ stats.sellThrough }}%</p>
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-6 md:grid-cols-3">
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Total Capacity</p>
+                    <p class="mt-4 text-4xl font-black text-white">{{ stats.totalCapacity }}</p>
+                </div>
+
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Sold Out Events</p>
+                    <p class="mt-4 text-4xl font-black text-rose-400">{{ stats.soldOutEvents }}</p>
+                </div>
+
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Inventory Health</p>
+                    <p class="mt-4 text-4xl font-black" :class="stats.remainingTickets > 0 ? 'text-emerald-400' : 'text-rose-400'">
+                        {{ stats.remainingTickets > 0 ? 'Active' : 'Sold Out' }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-6 md:grid-cols-2">
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 transition-all hover:border-indigo-500/20">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Highest Selling Event</p>
+                    <template v-if="stats.highestSellingEvent">
+                        <p class="mt-4 text-2xl font-black tracking-tight text-white">{{ stats.highestSellingEvent.title }}</p>
+                        <p class="mt-2 text-sm text-indigo-400 font-medium">
+                            🔥 {{ stats.highestSellingEvent.sold }} tickets secured
+                        </p>
+                    </template>
+                    <p v-else class="mt-4 text-sm text-gray-500 italic">No transactions recorded yet.</p>
+                </div>
+
+                <div class="rounded-3xl border border-white/10 bg-white/5 p-6 transition-all hover:border-rose-500/20">
+                    <p class="text-xs font-bold tracking-wider text-gray-400 uppercase">Lowest Inventory Event</p>
+                    <template v-if="stats.lowestInventoryEvent">
+                        <p class="mt-4 text-2xl font-black tracking-tight text-white">{{ stats.lowestInventoryEvent.title }}</p>
+                        <p class="mt-2 text-sm text-rose-400 font-medium">
+                            🔥 Only {{ stats.lowestInventoryEvent.remaining }} passes left
+                        </p>
+                    </template>
+                    <p v-else class="mt-4 text-sm text-gray-500 italic">No critical depletion detected.</p>
+                </div>
+            </div>
+
         </div>
     </div>
 </template>

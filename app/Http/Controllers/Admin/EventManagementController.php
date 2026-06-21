@@ -63,6 +63,12 @@ class EventManagementController extends Controller
 
     public function destroy(Event $event)
     {
+        if ($event->tickets()->exists()) {
+            return back()->withErrors([
+                'event' => 'Cannot delete an event that already has purchased tickets.',
+            ]);
+        }
+
         $event->delete();
 
         return redirect()->route('admin.events.index');
